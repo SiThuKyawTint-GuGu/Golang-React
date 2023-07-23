@@ -3,7 +3,8 @@ import "react-toastify/dist/ReactToastify.css";
 // import { ToastContainer, toast } from "react-toastify";
 // import { confirmAlert } from 'react-confirm-alert';
 import 'react-confirm-alert/src/react-confirm-alert.css';
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import ax from "../ax";
 // import axios from 'axios';
 // import { toBeChecked } from '@testing-library/jest-dom/dist/matchers';
 
@@ -22,16 +23,22 @@ const Home = () => {
     const [show, setShow] = useState(false);
     const [open, setOpen] = useState(false);
     const [Id, setId] = useState(null);
+    const [rerenderFlag, setRerenderFlag] = useState(false);
 
+    useEffect(() => {
+        ax.get('/lists').then((response) => {
+            setData(response.data.list);
+        }).then((error) => {
+            console.log(error);
+       })
+    }, [rerenderFlag])
 
     const handletoggle = () => {
         setToggle(!toggle)
     }
 
     const handlesave = () => {
-        let randomid = parseFloat((Math.random() * 100).toFixed(0));
-        let obj = {
-            id: randomid,
+        ax.post('/lists', {
             name: name,
             pawrent: pawrent,
             phone: phone,
@@ -39,49 +46,57 @@ const Home = () => {
             status: status,
             breed: breed,
             address: address,
-            township : township,
-        }
-        setData([...data, obj]);
-        console.log(obj);
+            township: township,
+        }).then((response) => {
+            console.log(response)
+            setRerenderFlag(!rerenderFlag);
+        }).catch((error) => {
+            console.log(error);
+        })
     }
 
     const handledelete = (id) => {
-       setData(data.filter(i => i.id !== id))
+        ax.delete(`/deleteitem?id=${id}`).then((response) => {
+            const updatedData = data.filter(item => item.ID !== id);
+            setData(updatedData); 
+            console.log(response)
+        }).catch((error) => {
+            console.log(error);
+        })
+        console.log(id);
     }
 
     const handleedit = (id) => {
-        const item = data.find(i => i.id === id)
-        setName(item.name)
-        setPawrent(item.pawrent)
-        setPhone(item.phone)
-        setCity(item.city)
-        setStatus(item.status)
-        setBreed(item.breed)
-        setAddress(item.address)
-        setTownship(item.township);
-        setId(item.id);
+        const item = data.find(i => i.ID === id)
+        console.log(id);
+        setName(item.Name)
+        setPawrent(item.Pawrent)
+        setPhone(item.Phone)
+        setCity(item.City)
+        setStatus(item.Status)
+        setBreed(item.Breed)
+        setAddress(item.Address)
+        setTownship(item.Township);
+        setId(item.ID);
         setOpen(!open)
     }
 
     const handleupdate = (id) => {
-        const UpdateData = data.map(i => {
-            if (i.id === id) {
-                return {
-                    id: id,
-                    name: name,
-                    pawrent: pawrent,
-                    phone: phone,
-                    city: city,
-                    status: status,
-                    breed: breed,
-                    address: address,
-                    township: township,
-                }
-            }
-            return i
+        ax.put(`/updateItem?id=${id}`, {
+            name: name,
+            pawrent: pawrent,
+            phone: phone,
+            city: city,
+            status: status,
+            breed: breed,
+            address: address,
+            township: township,
+        }).then((response) => {
+            setRerenderFlag(!rerenderFlag)
+            console.log(response)
+        }).then((error) => {
+            console.log(error);
         })
-        setData(UpdateData)
-        setOpen(!open)
     }
 
     return (
@@ -160,6 +175,7 @@ const Home = () => {
                                     <th><input type="checkbox" name="" id="" /></th>
                                     <th>ID</th>
                                     <th>Pet Name</th>
+                                    <th>Pawrent</th>
                                     <th>Status</th>
                                     <th>Pawrent</th>
                                     <th>Breed</th>
@@ -174,15 +190,16 @@ const Home = () => {
                                         return (
                                             <tr className="position-relative" >
                                                 <td><input type="checkbox" name="" id="" /></td>
-                                                <td>{ item.id}</td>
-                                                <td>{ item.name}</td>
-                                                <td>{item.status} </td>
-                                                <td>{ item.breed}</td>
-                                                <td>{item.phone }</td>
-                                                <td>{item.address }</td>
+                                                <td>{item.ID}</td>
+                                                <td>{item.Name}</td>
+                                                <td>{item.Pawrent}</td>
+                                                <td>{item.Status} </td>
+                                                <td>{item.Breed}</td>
+                                                <td>{item.Phone }</td>
+                                                <td>{item.Address }</td>
                                                 <td>
-                                                    <button onClick={()=>handleedit(item.id)} className="btn btn-outline-success btn-sm">Update</button>
-                                                    <button onClick={()=>handledelete(item.id)} className="btn btn-outline-danger btn-sm ms-2">Delete</button>
+                                                    <button onClick={()=>handleedit(item.ID)} className="btn btn-outline-success btn-sm">Update</button>
+                                                    <button onClick={()=>handledelete(item.ID)} className="btn btn-outline-danger btn-sm ms-2">Delete</button>
                                                 </td>
                                             </tr>
                                         )
